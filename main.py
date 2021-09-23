@@ -50,7 +50,7 @@ def get_table():
     my_table = tables[3]
 
     i = 1
-    j = 68
+    j = ord('D')
     for option in my_table.find_all('option'):
         option = str(option)
         if "selected" in option:
@@ -58,7 +58,7 @@ def get_table():
             j += 2
 
     i = 2
-    j = 65
+    j = ord('A')
     for a in my_table.find_all('a'):
         a = str(a)
         if "Դասակարգել" in a:
@@ -69,7 +69,7 @@ def get_table():
             j += 1
 
     i = 3
-    j = 65
+    j = ord('A')
     for a in my_table.find_all('a'):
         a = str(a)
         if "անկ" in a or "ԱՆԿ" in a:
@@ -78,7 +78,7 @@ def get_table():
                 i += 1
 
     i = 3
-    j = 66
+    j = ord('B')
     for a_href in my_table.find_all('td'):
         a_href = str(a_href)
         if "a href" in a_href and "bank" in a_href:
@@ -87,7 +87,7 @@ def get_table():
                 i += 1
 
     i = 3
-    j = 67
+    j = ord('C')
     for date in my_table.find_all('td'):
         date = str(date)
         if "class=\"date\"" in date:
@@ -111,9 +111,11 @@ def get_table():
 
     h = 0
     for i in range(3, 20):
-        for j in range(68, 76):
+        for j in range(ord('D'), ord('L')):
             sheet[chr(j) + str(i)] = numbers[h]
             h += 1
+
+    # print(my_table)
 
 
 schedule.every(5).minutes.do(get_table)
@@ -121,7 +123,7 @@ schedule.every(5).minutes.do(get_table)
 get_table()
 
 workbook.save(filename="data.xlsx")
-# os.system('start excel.exe data.xlsx')
+# os.system('start excel.exe data.xlsx')  #for windows
 
 # while True:
 #     schedule.run_pending()
