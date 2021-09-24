@@ -1,36 +1,30 @@
-import os
-import io
 import re
-import time
 import requests
-import schedule
-import pandas
 
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 
-# creating a sheet in excel
-workbook = Workbook()
-sheet = workbook.active
 
-# merging some cells
-sheet.merge_cells('D1:E1')
-sheet.merge_cells('F1:G1')
-sheet.merge_cells('H1:I1')
-sheet.merge_cells('J1:K1')
+def set_up_sheet(sheet):
+    # merging some cells
+    sheet.merge_cells('D1:E1')
+    sheet.merge_cells('F1:G1')
+    sheet.merge_cells('H1:I1')
+    sheet.merge_cells('J1:K1')
 
-# setting the font on centre
-i = 1
-j = 4
-while j < 11:
-    sheet.cell(i, j).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    j += 2
+    # setting the font on centre
+    i = 1
+    j = 4
+    while j < 11:
+        sheet.cell(i, j).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        j += 2
 
-# increasing the width of some columns
-sheet.column_dimensions['A'].width = 25
-sheet.column_dimensions['B'].width = 15
-sheet.column_dimensions['C'].width = 15
+    # increasing the width of some columns
+    sheet.column_dimensions['A'].width = 25
+    sheet.column_dimensions['B'].width = 15
+    sheet.column_dimensions['C'].width = 15
+
 
 # this function is for finding the index of a specific character
 def find_nth(haystack, needle, n):
@@ -40,8 +34,9 @@ def find_nth(haystack, needle, n):
         n -= 1
     return start
 
+
 # this function is for getting all the elements of the table
-def get_table():
+def get_table(sheet):
     r = requests.get("https://www.rate.am")
 
     # parsing the text of the page
@@ -57,54 +52,54 @@ def get_table():
     my_table = tables[3]
 
     # writing the currencies in the first row
-    i = 1
+    first_row = 1
     j = ord('D')
     for option in my_table.find_all('option'):
         option = str(option)
         if "selected" in option:
-            sheet[chr(j) + str(i)] = option[option.index(">") + 1:option.index(">") + 6]
+            sheet[chr(j) + str(first_row)] = option[option.index(">") + 1:option.index(">") + 6]
             j += 2
 
     # writing the second row: banks, branches, the date etc
-    i = 2
+    first_row = 2
     j = ord('A')
     for a in my_table.find_all('a'):
         a = str(a)
         if "Դասակարգել" in a:
-            sheet[chr(j) + str(i)] = a[a.index('>') + 1:find_nth(a, "<", 2)]
+            sheet[chr(j) + str(first_row)] = a[a.index('>') + 1:find_nth(a, "<", 2)]
             if "<br/>" in a:
                 b = a[a.index('>') + 1:find_nth(a, "<", 2)]
-                sheet[chr(j) + str(i)] = b + a[find_nth(a, ">", 2) + 1:find_nth(a, "<", 3)]
+                sheet[chr(j) + str(first_row)] = b + a[find_nth(a, ">", 2) + 1:find_nth(a, "<", 3)]
             j += 1
 
     # writing the first column: banks
-    i = 3
+    first_row = 3
     j = ord('A')
     for a in my_table.find_all('a'):
         a = str(a)
         if "անկ" in a or "ԱՆԿ" in a:
             if "Դասակարգել" not in a and "class" not in a:
-                sheet[chr(j) + str(i)] = a[a.index('>') + 1:find_nth(a, "<", 2)]
-                i += 1
+                sheet[chr(j) + str(first_row)] = a[a.index('>') + 1:find_nth(a, "<", 2)]
+                first_row += 1
 
     # writing the second column: the number of branches
-    i = 3
+    first_row = 3
     j = ord('B')
     for a_href in my_table.find_all('td'):
         a_href = str(a_href)
         if "a href" in a_href and "bank" in a_href:
             if "class" not in a_href:
-                sheet[chr(j) + str(i)] = a_href[find_nth(a_href, ">", 2) + 1:find_nth(a_href, "<", 3)]
-                i += 1
+                sheet[chr(j) + str(first_row)] = a_href[find_nth(a_href, ">", 2) + 1:find_nth(a_href, "<", 3)]
+                first_row += 1
 
     # writing the third column: the date
-    i = 3
+    first_row = 3
     j = ord('C')
     for date in my_table.find_all('td'):
         date = str(date)
         if "class=\"date\"" in date:
-            sheet[chr(j) + str(i)] = date[find_nth(date, ">", 1) + 1:find_nth(date, "<", 2)]
-            i += 1
+            sheet[chr(j) + str(first_row)] = date[find_nth(date, ">", 1) + 1:find_nth(date, "<", 2)]
+            first_row += 1
 
     # writing from forth to 11th column: the currency
     data = soup.find_all('td')
@@ -112,10 +107,10 @@ def get_table():
                d.text.isdigit() or not len(d.text) or re.match(r'^[-+]?\d+(?:\.\d+)$', d.text)]
 
     numbers.pop(0)
-    i = 191
-    while i >= 153:
-        numbers.pop(i)
-        i -= 1
+    first_row = 191
+    while first_row >= 153:
+        numbers.pop(first_row)
+        first_row -= 1
 
     f = 144
     while f >= 0:
@@ -123,20 +118,21 @@ def get_table():
         f -= 9
 
     h = 0
-    for i in range(3, 20):
+    for first_row in range(3, 20):
         for j in range(ord('D'), ord('L')):
-            sheet[chr(j) + str(i)] = numbers[h]
+            sheet[chr(j) + str(first_row)] = numbers[h]
             h += 1
 
 
-# setting a timer for fetching the data and writing in an excel sheet
-schedule.every(5).minutes.do(get_table)
+if __name__ == "__main__":
+    # creating a sheet in excel
+    workbook = Workbook()
+    sheet = workbook.active
+    set_up_sheet(sheet)
 
-get_table()
+    # setting a timer for fetching the data and writing in an excel sheet
+    # schedule.every(5).minutes.do(get_table, (sheet, ))
 
-workbook.save(filename="data.xlsx")
-# os.system('start excel.exe data.xlsx')  #for windows
+    get_table(sheet)
 
-# while True:
-#     schedule.run_pending()
-#     time.sleep(5)
+    workbook.save(filename="data.xlsx")
