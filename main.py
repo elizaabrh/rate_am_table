@@ -51,7 +51,7 @@ def get_table(sheet):
     # getting the table we need
     my_table = tables[3]
 
-    # writing the currencies in the first row
+    # writing the exchange rates in the first row
     first_row = 1
     j = ord('D')
     for option in my_table.find_all('option'):
